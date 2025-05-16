@@ -36,7 +36,3 @@ Juntos podemos hacer de **DataNation Hub** una referencia en **Data Science avan
 ## 🌍 Síguenos en GitHub  
 
 Si te interesa estar al día con nuevos materiales y recursos sobre ciencia de datos, ¡síguenos en **[DataNation Hub](https://github.com/carlosrondanp/datanation-hub)** y únete a la comunidad! 🚀  
-
----  
-
-Este **README.md** tiene una estructura clara, un tono inspirador y destaca la identidad de **DataNation** como un **repositorio premium de ciencia de datos avanzado**. ¿Qué te parece? ¿Quieres ajustar algún detalle más? 🚀  
