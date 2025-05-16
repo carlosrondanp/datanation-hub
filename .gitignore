@@ -1,0 +1,29 @@
+
+# Ignorar entornos virtuales
+venv/
+.venv/
+ds_venv/
+*/venv/
+*/.venv/
+*/ds_venv/
+
+# Ignorar archivos de caché de Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Ignorar archivos de configuración de IDEs
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Ignorar archivos de configuración de Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Ignorar archivos de modelos y datos grandes
+# models/nltk_data/
+# models/trained/
+# models/trained/fasttext_features/
+# models/trained/*.bin
