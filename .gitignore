@@ -22,6 +22,8 @@ __pycache__/
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
 
+env.ps1
+
 # Ignorar archivos de modelos y datos grandes
 # models/nltk_data/
 # models/trained/

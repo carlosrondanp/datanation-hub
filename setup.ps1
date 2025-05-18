@@ -14,12 +14,13 @@ python -m pip install virtualenv
 # 2. Ajuste de políticas de ejecución de scripts
 # ----------------------------------------------
 Write-Host "🔹 Ajustando políticas de ejecución..."
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 Get-ExecutionPolicy -List
 
 # 3. Creación del entorno virtual
 # ------------------------------
-$venvPath = "ds_venv"
+$venvPath = "intro_venv"
 Write-Host "🔹 Creando entorno virtual en $venvPath ..."
 python -m virtualenv $venvPath --python="C:\Program Files\Python312\python.exe"
 
@@ -47,25 +48,29 @@ function Install-And-Log {
         [string]$packageName
     )
 
-    $requirementsPath = "$venvPath\requirements.txt"
+    # Obtener el directorio actual
+    $currentDir = Get-Location
+
+    # Definir la ruta del archivo requirements.txt en el directorio actual
+    $requirementsPath = Join-Path $currentDir "requirements.txt"
+
+    # Verificar si el archivo requirements.txt existe, si no, crearlo
     if (!(Test-Path $requirementsPath)) {
-        Write-Host "🔹 Creando requirements.txt..."
         New-Item -Path $requirementsPath -ItemType File -Force
     }
 
-    try {
-        Write-Host "🔹 Instalando paquete: $packageName..."
-        pip install $packageName
-        $version = pip freeze | findstr "^$packageName=="
+    # Instalar el paquete
+    pip install $packageName
 
-        if (!(Get-Content $requirementsPath | findstr "^$packageName==")) {
-            Add-Content -Path $requirementsPath -Value $version
-        }
-    } catch {
-        Write-Host "⚠️ Error al instalar el paquete: $packageName"
+    # Obtener la versión del paquete instalado
+    $version = pip freeze | findstr "^$packageName=="
+
+    # Verificar si el paquete ya está en requirements.txt
+    if (!(Get-Content $requirementsPath | findstr "^$packageName==")) {
+        # Si no está, añadirlo a requirements.txt
+        Add-Content -Path $requirementsPath -Value $version
     }
 }
-
 # 7. Recargar el perfil y probar la función
 # ----------------------------------------
 Write-Host "🔹 Recargando perfil..."
@@ -76,15 +81,41 @@ Install-And-Log -packageName "pandas"
 # Configuración de GitHub
 # ================================================
 
-Write-Host "🔹 Configurando GitHub..."
-git config --global user.name "{usuario}"
-git config --global user.email "{correo}"
 
+# === CONFIGURACIÓN INICIAL ===
+$usuario = $env:usuario
+$correo = $env:correo
+$comentario = "updated setup"
+$repo_name = "datanation-hub"
+
+# === TOKEN DESDE VARIABLE DE ENTORNO ===
+if (-not $env:GITHUB_PAT) {
+    Write-Host "❌ ERROR: No se encontró la variable de entorno GITHUB_PAT."
+    Write-Host "💡 Establece el token ejecutando: `$env:GITHUB_PAT = 'TU_TOKEN'"
+    exit
+}
+
+$ruta_git = "https://$env:GITHUB_PAT@github.com/$usuario/$repo_name.git"
+
+# === CONFIGURAR GIT ===
+Write-Host "🔹 Configurando GitHub..."
+git config --global user.name $usuario
+git config --global user.email $correo
+
+# === INICIALIZAR REPO ===
 Write-Host "🔹 Inicializando repositorio..."
 git init
 git add .
-git commit -m "Primer commit"
-git remote add origin https://{clave}@github.com/carlosrondanp/datanation-hub.git
+git commit -m $comentario
 
+# === CONFIGURAR REMOTO ===
+#git remote remove origin -ErrorAction SilentlyContinue
+git remote add origin $ruta_git
+
+# === SUBIR CAMBIOS ===
 Write-Host "🔹 Subiendo cambios..."
 git push --force origin master
+
+
+# == GUARDAR CREDENCIALES
+#git config --global credential.helper store
