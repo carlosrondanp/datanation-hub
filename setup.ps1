@@ -85,7 +85,7 @@ Install-And-Log -packageName "pandas"
 # === CONFIGURACIÓN INICIAL ===
 $usuario = $env:usuario
 $correo = $env:correo
-$comentario = "updated setup"
+$comentario = "add docker_install.ps1"
 $repo_name = "datanation-hub"
 
 # === TOKEN DESDE VARIABLE DE ENTORNO ===
@@ -119,3 +119,8 @@ git push --force origin master
 
 # == GUARDAR CREDENCIALES
 #git config --global credential.helper store
+
+
+# === DOCKER ===
+# Extensión para VSC
+#code --install-extension ms-vscode-remote.remote-wsl
