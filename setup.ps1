@@ -85,7 +85,7 @@ Install-And-Log -packageName "pandas"
 # === CONFIGURACIÓN INICIAL ===
 $usuario = $env:usuario
 $correo = $env:correo
-$comentario = "add docker_install.ps1"
+$comentario = "add bd_create.ps1"
 $repo_name = "datanation-hub"
 
 # === TOKEN DESDE VARIABLE DE ENTORNO ===

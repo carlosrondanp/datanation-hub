@@ -17,3 +17,4 @@
 11. docker info
 12. docker run hello-world
 
+13. Cuando reiniciamos la computadora ejecutar Docker Desktop: Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
