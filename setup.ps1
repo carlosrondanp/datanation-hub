@@ -85,7 +85,7 @@ Install-And-Log -packageName "psycopg2"
 # === CONFIGURACIÓN INICIAL ===
 $usuario = $env:usuario
 $correo = $env:correo
-$comentario = "conexión BD postgresql y Mysql"
+$comentario = "sesion 2 culminada"
 $repo_name = "datanation-hub"
 
 # === TOKEN DESDE VARIABLE DE ENTORNO ===
