@@ -20,7 +20,7 @@ Get-ExecutionPolicy -List
 
 # 3. Creación del entorno virtual
 # ------------------------------
-$venvPath = "intro_venv"
+$venvPath = "ds_venv"
 Write-Host "🔹 Creando entorno virtual en $venvPath ..."
 python -m virtualenv $venvPath --python="C:\Program Files\Python312\python.exe"
 
@@ -75,7 +75,7 @@ function Install-And-Log {
 # ----------------------------------------
 Write-Host "🔹 Recargando perfil..."
 . $profile
-Install-And-Log -packageName "pandas"
+Install-And-Log -packageName "psycopg2"
 
 # ================================================
 # Configuración de GitHub
@@ -85,7 +85,7 @@ Install-And-Log -packageName "pandas"
 # === CONFIGURACIÓN INICIAL ===
 $usuario = $env:usuario
 $correo = $env:correo
-$comentario = "add bd_create.ps1"
+$comentario = "conexión BD postgresql y Mysql"
 $repo_name = "datanation-hub"
 
 # === TOKEN DESDE VARIABLE DE ENTORNO ===

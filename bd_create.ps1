@@ -132,5 +132,7 @@ select *
 
 # En caso reinicie la computadora, encendemos Docker Desktop
 Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+docker info
+docker ps
 docker start postgres_db
 docker start mysql_db
