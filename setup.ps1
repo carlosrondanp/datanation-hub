@@ -5,30 +5,27 @@
 Write-Host "🔹 Verificando instalación de Python..."
 python --version
 
-# 1. Instalación de virtualenv y actualización de pip
-# --------------------------------------------------
-Write-Host "🔹 Actualizando pip e instalando virtualenv..."
-python -m pip install --upgrade pip
-python -m pip install virtualenv
-
-# 2. Ajuste de políticas de ejecución de scripts
+# 1. Ajuste de políticas de ejecución de scripts
 # ----------------------------------------------
 Write-Host "🔹 Ajustando políticas de ejecución..."
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 Get-ExecutionPolicy -List
 
-# 3. Creación del entorno virtual (solo si no existe)
+# 2. Creación del entorno virtual (solo si no existe)
 # --------------------------------------------------
 $venvPath = "ds_venv"
 if (Test-Path $venvPath) {
     Write-Host "✅ El entorno virtual ya existe en $venvPath"
 } else {
     Write-Host "🔹 Creando entorno virtual en $venvPath ..."
+    Write-Host "🔹 Actualizando pip e instalando virtualenv..."
+    python -m pip install --upgrade pip
+    python -m pip install virtualenv
     python -m virtualenv $venvPath --python="C:\Program Files\Python312\python.exe"
 }
 
-# 4. Activación del entorno virtual
+# 3. Activación del entorno virtual
 # --------------------------------
 Write-Host "🔹 Activando entorno virtual..."
 & ".\$venvPath\Scripts\activate.ps1"
@@ -37,7 +34,7 @@ Write-Host "🔹 Activando entorno virtual..."
 # Automatización de instalación de paquetes en PowerShell
 # ================================================
 
-# 5. Verificación y creación del perfil de PowerShell
+# 4. Verificación y creación del perfil de PowerShell
 # --------------------------------------------------
 Write-Host "🔹 Verificando perfil de PowerShell..."
 if (!(Test-Path $profile)) {
@@ -45,7 +42,7 @@ if (!(Test-Path $profile)) {
     Write-Host "✅ Perfil de PowerShell creado"
 }
 
-# 6. Función para instalar paquetes y actualizar requirements.txt
+# 5. Función para instalar paquetes y actualizar requirements.txt
 # ---------------------------------------------------------------
 function Install-And-Log {
     param (
@@ -59,15 +56,24 @@ function Install-And-Log {
         New-Item -Path $requirementsPath -ItemType File -Force
     }
 
-    pip install $packageName
-    $version = pip freeze | findstr "^$packageName=="
+    # Verificar si el paquete ya está instalado
+    $installed = pip freeze | findstr "^$packageName=="
+    if (!$installed) {
+        Write-Host "🔹 Instalando $packageName..."
+        pip install $packageName
+        $version = pip freeze | findstr "^$packageName=="
+    } else {
+        Write-Host "✅ $packageName ya está instalado"
+        $version = $installed
+    }
 
-    if (!(Get-Content $requirementsPath | findstr "^$packageName==")) {
+    if (!(Get-Content $requirementsPath -ErrorAction SilentlyContinue | findstr "^$packageName==")) {
         Add-Content -Path $requirementsPath -Value $version
     }
 }
-# 7. Recargar el perfil y probar la función
-# ----------------------------------------
+
+# 6. Recargar el perfil e instalar paquetes necesarios
+# ----------------------------------------------------
 Write-Host "🔹 Recargando perfil..."
 . $profile
 Install-And-Log -packageName "psycopg2"
