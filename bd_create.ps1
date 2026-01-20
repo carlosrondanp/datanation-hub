@@ -16,7 +16,7 @@ docker run -d \
   -e POSTGRES_PASSWORD=admin123 \               # Contraseña del usuario
   -e POSTGRES_DB=testdb \                       # Nombre de la base de datos inicial
   -v pgdata:/var/lib/postgresql/data \          # Volumen persistente donde se guardan los datos
-  -p 5432:5432 \                                # Mapea el puerto del contenedor al host
+  -p 5433:5432 \                                # Mapea el puerto del contenedor al host
   postgres:15                                   # Imagen base (versión 15)
 
 # | Parámetro          | Explicación                                                            |

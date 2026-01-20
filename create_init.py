@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 EXCLUDE_DIRS = [
-    os.path.join(BASE_DIR, 'ds_venv'),
+    os.path.join(BASE_DIR, ' '),
     os.path.join(BASE_DIR, '_pycache_'),
 ]
 

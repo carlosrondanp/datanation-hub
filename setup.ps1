@@ -14,15 +14,19 @@ python -m pip install virtualenv
 # 2. Ajuste de políticas de ejecución de scripts
 # ----------------------------------------------
 Write-Host "🔹 Ajustando políticas de ejecución..."
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 Get-ExecutionPolicy -List
 
-# 3. Creación del entorno virtual
-# ------------------------------
+# 3. Creación del entorno virtual (solo si no existe)
+# --------------------------------------------------
 $venvPath = "ds_venv"
-Write-Host "🔹 Creando entorno virtual en $venvPath ..."
-python -m virtualenv $venvPath --python="C:\Program Files\Python312\python.exe"
+if (Test-Path $venvPath) {
+    Write-Host "✅ El entorno virtual ya existe en $venvPath"
+} else {
+    Write-Host "🔹 Creando entorno virtual en $venvPath ..."
+    python -m virtualenv $venvPath --python="C:\Program Files\Python312\python.exe"
+}
 
 # 4. Activación del entorno virtual
 # --------------------------------
@@ -38,8 +42,8 @@ Write-Host "🔹 Activando entorno virtual..."
 Write-Host "🔹 Verificando perfil de PowerShell..."
 if (!(Test-Path $profile)) {
     New-Item -Path $profile -ItemType File -Force
+    Write-Host "✅ Perfil de PowerShell creado"
 }
-notepad $profile
 
 # 6. Función para instalar paquetes y actualizar requirements.txt
 # ---------------------------------------------------------------
@@ -48,26 +52,17 @@ function Install-And-Log {
         [string]$packageName
     )
 
-    # Obtener el directorio actual
     $currentDir = Get-Location
-
-    # Definir la ruta del archivo requirements.txt en el directorio actual
     $requirementsPath = Join-Path $currentDir "requirements.txt"
 
-    # Verificar si el archivo requirements.txt existe, si no, crearlo
     if (!(Test-Path $requirementsPath)) {
         New-Item -Path $requirementsPath -ItemType File -Force
     }
 
-    # Instalar el paquete
     pip install $packageName
-
-    # Obtener la versión del paquete instalado
     $version = pip freeze | findstr "^$packageName=="
 
-    # Verificar si el paquete ya está en requirements.txt
     if (!(Get-Content $requirementsPath | findstr "^$packageName==")) {
-        # Si no está, añadirlo a requirements.txt
         Add-Content -Path $requirementsPath -Value $version
     }
 }
@@ -81,11 +76,22 @@ Install-And-Log -packageName "psycopg2"
 # Configuración de GitHub
 # ================================================
 
+# === CONFIGURAR .gitignore ===
+$gitignorePath = ".gitignore"
+if (!(Test-Path $gitignorePath)) {
+    New-Item -Path $gitignorePath -ItemType File -Force
+}
+
+$envPsPattern = "env.ps1"
+if (!(Get-Content $gitignorePath -ErrorAction SilentlyContinue | Select-String -Pattern "^env\.ps1$")) {
+    Add-Content -Path $gitignorePath -Value "`n# Archivo con información confidencial`nenv.ps1"
+    Write-Host "✅ env.ps1 añadido a .gitignore"
+}
 
 # === CONFIGURACIÓN INICIAL ===
 $usuario = $env:usuario
 $correo = $env:correo
-$comentario = "sesion 2 culminada"
+$comentario = "Actualización automática - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 $repo_name = "datanation-hub"
 
 # === TOKEN DESDE VARIABLE DE ENTORNO ===
@@ -102,25 +108,30 @@ Write-Host "🔹 Configurando GitHub..."
 git config --global user.name $usuario
 git config --global user.email $correo
 
-# === INICIALIZAR REPO ===
-Write-Host "🔹 Inicializando repositorio..."
-git init
+# === INICIALIZAR REPO (solo si no existe) ===
+if (!(Test-Path ".git")) {
+    Write-Host "🔹 Inicializando repositorio..."
+    git init
+} else {
+    Write-Host "✅ Repositorio ya inicializado"
+}
+
+# === AGREGAR CAMBIOS ===
+Write-Host "🔹 Agregando cambios..."
 git add .
 git commit -m $comentario
 
-# === CONFIGURAR REMOTO ===
-#git remote remove origin -ErrorAction SilentlyContinue
-git remote add origin $ruta_git
+# === CONFIGURAR REMOTO (solo si no existe) ===
+$remoteExists = git remote | Select-String -Pattern "^origin$"
+if (!$remoteExists) {
+    Write-Host "🔹 Configurando remoto..."
+    git remote add origin $ruta_git
+} else {
+    Write-Host "✅ Remoto ya configurado"
+}
 
 # === SUBIR CAMBIOS ===
 Write-Host "🔹 Subiendo cambios..."
-git push --force origin master
+git push origin master
 
-
-# == GUARDAR CREDENCIALES
-#git config --global credential.helper store
-
-
-# === DOCKER ===
-# Extensión para VSC
-#code --install-extension ms-vscode-remote.remote-wsl
+Write-Host "✅ ¡Proceso completado exitosamente!"
