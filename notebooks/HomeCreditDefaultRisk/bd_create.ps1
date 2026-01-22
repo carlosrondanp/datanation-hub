@@ -1,139 +1,115 @@
 # ================================================
-# Script de Configuración de PostgreSQL con Docker
+# POSTGRESQL DOCKER - CREAR O ACTIVAR CONTENEDOR
 # ================================================
+# Este script crea el contenedor si no existe, o lo activa si esta detenido
+# Ejecuta este script cada vez que reinicies tu PC o cuando necesites la BD
 
-# === CONFIGURACIÓN ===
+# === CONFIGURACION ===
 $DB_USER = "admin"
 $DB_PASSWORD = "admin123"
-$DB_PORT = "5433"
-$DB_NAME_INICIAL = "testdb"
-$NEW_DB_NAME = "home_credit_db"  # Nueva base de datos para el proyecto
+$DB_PORT = "54330"
+$DB_NAME = "home_credit_db"
 $CONTAINER_NAME = "postgres_db"
 $VOLUME_NAME = "pgdata"
 
-Write-Host "🔹 Verificando estado de Docker..."
-docker ps
+Write-Host "`n============================================" -ForegroundColor Cyan
+Write-Host "  POSTGRESQL - HOME CREDIT DEFAULT RISK" -ForegroundColor Cyan
+Write-Host "============================================`n" -ForegroundColor Cyan
 
-Write-Host "`n🔹 Verificando volúmenes existentes..."
-docker volume ls
-
-# === CREAR VOLUMEN (solo si no existe) ===
-$volumeExists = docker volume ls -q -f name=$VOLUME_NAME
-if (!$volumeExists) {
-    Write-Host "🔹 Creando volumen $VOLUME_NAME..."
-    docker volume create $VOLUME_NAME
-} else {
-    Write-Host "✅ Volumen $VOLUME_NAME ya existe"
+# === PASO 1: VERIFICAR DOCKER ===
+Write-Host "[1/4] Verificando Docker..." -ForegroundColor Yellow
+try {
+    docker info | Out-Null
+    Write-Host "Docker funcionando`n" -ForegroundColor Green
+} catch {
+    Write-Host "Docker no esta corriendo. Iniciando..." -ForegroundColor Red
+    Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    Start-Sleep -Seconds 30
 }
 
-# === CREAR CONTENEDOR POSTGRESQL (solo si no existe) ===
-$containerExists = docker ps -a -q -f name=$CONTAINER_NAME
+# === PASO 2: CREAR VOLUMEN (si no existe) ===
+Write-Host "[2/4] Verificando volumen..." -ForegroundColor Yellow
+$volumeExists = docker volume ls -q -f name=^${VOLUME_NAME}$
+if (!$volumeExists) {
+    docker volume create $VOLUME_NAME | Out-Null
+    Write-Host "Volumen creado`n" -ForegroundColor Green
+} else {
+    Write-Host "Volumen existe`n" -ForegroundColor Green
+}
+
+# === PASO 3: CREAR O ACTIVAR CONTENEDOR ===
+Write-Host "[3/4] Verificando contenedor PostgreSQL..." -ForegroundColor Yellow
+$containerExists = docker ps -a -q -f name=^${CONTAINER_NAME}$
+
 if (!$containerExists) {
-    Write-Host "🔹 Creando contenedor PostgreSQL..."
+    Write-Host "   Creando contenedor..." -ForegroundColor White
     docker run -d `
       --name $CONTAINER_NAME `
       --restart=always `
       -e POSTGRES_USER=$DB_USER `
       -e POSTGRES_PASSWORD=$DB_PASSWORD `
-      -e POSTGRES_DB=$DB_NAME_INICIAL `
+      -e POSTGRES_DB=$DB_NAME `
+      -e POSTGRES_INITDB_ARGS="--auth-host=md5" `
+      -e POSTGRES_HOST_AUTH_METHOD=md5 `
       -v ${VOLUME_NAME}:/var/lib/postgresql/data `
       -p ${DB_PORT}:5432 `
-      postgres:15
+      postgres:15 | Out-Null
     
-    Write-Host "✅ Contenedor PostgreSQL creado exitosamente"
-    Start-Sleep -Seconds 5  # Esperar a que inicie
+    Write-Host "Contenedor creado exitosamente" -ForegroundColor Green
+    Write-Host "Esperando inicializacion (15 segundos)...`n" -ForegroundColor Yellow
+    Start-Sleep -Seconds 15
 } else {
-    Write-Host "✅ Contenedor $CONTAINER_NAME ya existe"
-    
-    # Verificar si está corriendo
-    $isRunning = docker ps -q -f name=$CONTAINER_NAME
+    $isRunning = docker ps -q -f name=^${CONTAINER_NAME}$
     if (!$isRunning) {
-        Write-Host "🔹 Iniciando contenedor..."
-        docker start $CONTAINER_NAME
-        Start-Sleep -Seconds 3
+        Write-Host "   Contenedor detenido. Iniciando..." -ForegroundColor White
+        docker start $CONTAINER_NAME | Out-Null
+        Start-Sleep -Seconds 5
+        Write-Host "Contenedor iniciado`n" -ForegroundColor Green
     } else {
-        Write-Host "✅ Contenedor ya está corriendo"
+        Write-Host "Contenedor ya corriendo`n" -ForegroundColor Green
     }
 }
 
-# === CREAR NUEVA BASE DE DATOS (solo si no existe) ===
-Write-Host "`n🔹 Verificando si la base de datos '$NEW_DB_NAME' existe..."
-$dbExists = docker exec $CONTAINER_NAME psql -U $DB_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$NEW_DB_NAME'"
+# === PASO 4: VERIFICAR Y MOSTRAR ESTADO ===
+Write-Host "[4/4] Verificando estado final..." -ForegroundColor Yellow
+$dbExists = docker exec $CONTAINER_NAME psql -U $DB_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>$null
 
 if ($dbExists -eq "1") {
-    Write-Host "✅ Base de datos '$NEW_DB_NAME' ya existe"
+    Write-Host "Base de datos '$DB_NAME' lista`n" -ForegroundColor Green
 } else {
-    Write-Host "🔹 Creando base de datos '$NEW_DB_NAME'..."
-    docker exec $CONTAINER_NAME psql -U $DB_USER -d postgres -c "CREATE DATABASE $NEW_DB_NAME;"
-    Write-Host "✅ Base de datos '$NEW_DB_NAME' creada exitosamente"
+    Write-Host "Base de datos '$DB_NAME' creada`n" -ForegroundColor Green
 }
 
-# === LISTAR BASES DE DATOS ===
-Write-Host "`n🔹 Bases de datos disponibles:"
-docker exec $CONTAINER_NAME psql -U $DB_USER -d postgres -c "\l"
+# === INFORMACION DE CONEXION ===
+Write-Host "`n============================================" -ForegroundColor Cyan
+Write-Host "  INFORMACION DE CONEXION:" -ForegroundColor Cyan
+Write-Host "============================================" -ForegroundColor Cyan
+Write-Host "  Host:     127.0.0.1" -ForegroundColor White
+Write-Host "  Puerto:   54330" -ForegroundColor White
+Write-Host "  Database: home_credit_db" -ForegroundColor White
+Write-Host "  Usuario:  admin" -ForegroundColor White
+Write-Host "  Password: admin123" -ForegroundColor White
+Write-Host "============================================" -ForegroundColor Cyan
 
-# === CREAR TABLA DE EJEMPLO EN LA NUEVA BASE DE DATOS ===
-Write-Host "`n🔹 Creando tabla 'clientes' en '$NEW_DB_NAME'..."
+# Listar tablas existentes
+Write-Host "`nTABLAS EN LA BASE DE DATOS:" -ForegroundColor Yellow
+$tables = docker exec $CONTAINER_NAME psql -U $DB_USER -d $DB_NAME -tAc "\dt" 2>$null
+if ($tables) {
+    Write-Host $tables -ForegroundColor White
+} else {
+    Write-Host "   (No hay tablas aun - usa sesion_1.ipynb para cargar datos)" -ForegroundColor Gray
+}
 
-$SQL_CREATE_TABLE = @"
-CREATE TABLE IF NOT EXISTS clientes (
-  id SERIAL PRIMARY KEY,
-  nombre VARCHAR(50) NOT NULL,
-  email VARCHAR(100),
-  edad INTEGER,
-  fecha_reg DATE
-);
-"@
-
-docker exec $CONTAINER_NAME psql -U $DB_USER -d $NEW_DB_NAME -c $SQL_CREATE_TABLE
-
-# === INSERTAR DATOS DE PRUEBA ===
-$SQL_INSERT_DATA = @"
-INSERT INTO clientes (nombre, email, edad, fecha_reg) 
-SELECT * FROM (VALUES
-  ('Ana Pérez', 'ana@gmail.com', 28, '2024-06-12'::date),
-  ('Luis Soto', 'luis@example.com', 35, '2024-05-30'::date),
-  ('María León', 'maria@correo.com', 42, '2023-12-01'::date),
-  ('Jorge Díaz', NULL, 30, '2025-01-15'::date),
-  ('Lucía Torres', 'lucia.torres@gmail.com', NULL, CURRENT_DATE)
-) AS v(nombre, email, edad, fecha_reg)
-WHERE NOT EXISTS (SELECT 1 FROM clientes LIMIT 1);
-"@
-
-docker exec $CONTAINER_NAME psql -U $DB_USER -d $NEW_DB_NAME -c $SQL_INSERT_DATA
-
-Write-Host "✅ Tabla 'clientes' configurada"
-
-# === CONSULTAR DATOS ===
-Write-Host "`n🔹 Datos en la tabla 'clientes':"
-docker exec $CONTAINER_NAME psql -U $DB_USER -d $NEW_DB_NAME -c "SELECT * FROM clientes;"
-
-# === INFORMACIÓN DE CONEXIÓN ===
-Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-Write-Host "📌 CONEXIÓN DESDE DBEAVER / PYTHON:"
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-Write-Host "   Host:          localhost"
-Write-Host "   Puerto:        $DB_PORT"
-Write-Host "   Base de datos: $NEW_DB_NAME"
-Write-Host "   Usuario:       $DB_USER"
-Write-Host "   Contraseña:    $DB_PASSWORD"
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-Write-Host "`n✅ ¡Proceso completado exitosamente!"
+Write-Host "`nSistema listo! Puedes usar sesion_1.ipynb para trabajar con la BD`n" -ForegroundColor Green
 
 # ================================================
-# COMANDOS ÚTILES
+# COMANDOS UTILES
 # ================================================
-
-# | Parámetro          | Explicación                                                            |
-# | ------------------ | ---------------------------------------------------------------------- |
-# | `--name`           | Nombre único del contenedor                                            |
-# | `--restart=always` | Hace que el contenedor se levante automáticamente al reiniciar Docker  |
-# | `-e`               | Define variables de entorno (usuario, contraseña, nombre de BD, etc.)  |
-# | `-v`               | Crea/monta un volumen Docker (datos persistentes en el disco del host) |
-# | `-p`               | Mapea un puerto del contenedor al puerto del sistema anfitrión         |
-# | `postgres:15`      | Imagen usada de Docker Hub (puedes cambiar la versión si lo necesitas) |
-
-#docker stop postgres_db      # Detiene el contenedor
-#docker rm postgres_db        # Elimina el contenedor (sin borrar datos)
-#docker volume rm pgdata      # Elimina los volumenes
+# Ver contenedores: docker ps -a
+# Detener: docker stop postgres_db
+# Iniciar: docker start postgres_db
+# Ver logs: docker logs postgres_db
+# Conectar bash: docker exec -it postgres_db bash
+# Conectar psql: docker exec -it postgres_db psql -U admin -d home_credit_db
+# Eliminar contenedor: docker stop postgres_db && docker rm postgres_db
+# Eliminar volumen: docker volume rm pgdata
